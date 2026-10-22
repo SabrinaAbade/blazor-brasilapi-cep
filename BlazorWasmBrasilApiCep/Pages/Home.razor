@@ -1,0 +1,73 @@
+﻿
+@page "/"
+
+@using System.Net.Http.Json
+@using BlazorWasmBrasilApiCep.Models
+
+@inject HttpClient Http
+
+<PageTitle>Consulta de CEP</PageTitle>
+
+<h1>Consulta de CEP</h1>
+
+<p>Digite um CEP para consultar o endereço.</p>
+
+<div class="mb-3">
+    <label for="cep">CEP:</label>
+    <input id="cep" class="form-control" @bind="cep" placeholder="Ex.: 30140071" />
+</div>
+
+<button class="btn btn-primary" @onclick="ConsultarCep">
+    Consultar
+</button>
+
+@if (!string.IsNullOrEmpty(mensagem))
+{
+    <p class="mt-3">@mensagem</p>
+}
+
+@if (endereco != null)
+{
+    <h3 class="mt-4">Endereço encontrado</h3>
+
+    <p><strong>CEP:</strong> @endereco.Cep</p>
+    <p><strong>Estado:</strong> @endereco.State</p>
+    <p><strong>Cidade:</strong> @endereco.City</p>
+    <p><strong>Bairro:</strong> @endereco.Neighborhood</p>
+    <p><strong>Rua:</strong> @endereco.Street</p>
+}
+
+@code {
+    private string cep = string.Empty;
+    private string mensagem = string.Empty;
+    private CepResponse? endereco;
+
+    private async Task ConsultarCep()
+    {
+        mensagem = string.Empty;
+        endereco = null;
+
+        cep = cep.Trim().Replace("-", "");
+
+        if (cep.Length != 8 || !cep.All(char.IsDigit))
+        {
+            mensagem = "Digite um CEP válido com 8 números.";
+            return;
+        }
+
+        try
+        {
+            endereco = await Http.GetFromJsonAsync<CepResponse>(
+                $"https://brasilapi.com.br/api/cep/v1/{cep}");
+
+            if (endereco == null)
+            {
+                mensagem = "Não foi possível encontrar o endereço.";
+            }
+        }
+        catch
+        {
+            mensagem = "Erro ao consultar o CEP. Verifique o número e tente novamente.";
+        }
+    }
+}
